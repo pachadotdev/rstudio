@@ -2,14 +2,13 @@
   "name": "rstudio",
   "version": "0.0.1",
   "description": "RStudio",
-  "main": "./src/main/app.js",
+  "main": "index.js",
   "repository": "https://github.com/rstudio/rstudio",
-  "author": "RStudio",
+  "author": "RStudio PBC",
   "license": "AGPL-3.0-only",
-  "dependencies": {},
   "devDependencies": {
-    "electron": "^12.0.2",
-    "eslint": "^7.23.0",
+    "electron": "^12.0.6",
+    "eslint": "^7.25.0",
     "typescript": "^4.2.4"
   }
 }
