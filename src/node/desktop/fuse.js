@@ -16,7 +16,7 @@
 const { fusebox, sparky } = require('fuse-box');
 
 const fuse = fusebox({
-  entry: 'src/main/index.ts',
+  entry: 'src/main/app.ts',
   target: 'browser',
   devServer: true,
   webIndex: true,
