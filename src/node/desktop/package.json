@@ -7,10 +7,18 @@
   "author": "RStudio PBC",
   "license": "AGPL-3.0-only",
   "devDependencies": {
-    "electron": "^12.0.6",
-    "eslint": "^7.25.0",
-    "fuse-box": "^4.0.0",
+    "@typescript-eslint/eslint-plugin": "^4.22.1",
+    "@typescript-eslint/parser": "^4.22.1",
+    "electron": "^12.0.7",
+    "eslint": "^7.26.0",
     "ts-node": "^9.1.1",
     "typescript": "^4.2.4"
+  },
+  "dependencies": {},
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "lint": "eslint -c .eslintrc --ext .ts ./src",
+    "start": "npm run build && electron ./dist/main/app.js"
   }
 }
