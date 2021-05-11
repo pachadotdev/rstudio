@@ -1,5 +1,5 @@
 /*
- * app.ts
+ * pending-window.ts
  *
  * Copyright (C) 2021 by RStudio, PBC
  *
@@ -13,24 +13,21 @@
  *
  */
 
-import { app } from "electron";
 
-import DesktopInfo from './desktop-info';
-import Main from './main';
+export default class PendingWindow {
+  isSatellite = true;
+  allowExternalNavigate = false; // for RDP
+  showToolbar = false;
 
-// Where it all begins
-app.whenReady().then(() => {
+  constructor(public name: string,
+              public x: number,
+              public y: number,
+              public width: number,
+              public height: number) {
+  }
 
-  (globalThis as any).rstudioGlobal = {
-    desktopInfo: new DesktopInfo()
-  };
-
-  new Main().run();
-});
-
-app.on('window-all-closed', () => {
-  // Mac apps generally don't close when you close the last window, but RStudio does
-  // if (process.platform !== 'darwin') {
-    app.quit();
-  // }
-});
+  get isEmpty() {
+    return !this.name;
+  }
+};
+ 

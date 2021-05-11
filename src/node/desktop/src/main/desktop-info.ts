@@ -1,5 +1,5 @@
 /*
- * app.ts
+ * desktop-info.ts
  *
  * Copyright (C) 2021 by RStudio, PBC
  *
@@ -13,24 +13,7 @@
  *
  */
 
-import { app } from "electron";
-
-import DesktopInfo from './desktop-info';
-import Main from './main';
-
-// Where it all begins
-app.whenReady().then(() => {
-
-  (globalThis as any).rstudioGlobal = {
-    desktopInfo: new DesktopInfo()
-  };
-
-  new Main().run();
-});
-
-app.on('window-all-closed', () => {
-  // Mac apps generally don't close when you close the last window, but RStudio does
-  // if (process.platform !== 'darwin') {
-    app.quit();
-  // }
-});
+export default class DesktopInfo {
+  constructor() {
+  }
+};
