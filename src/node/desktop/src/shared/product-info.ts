@@ -1,5 +1,5 @@
 /*
- * main.ts
+ * product-info.ts
  *
  * Copyright (C) 2021 by RStudio, PBC
  *
@@ -13,29 +13,7 @@
  *
  */
 
-import { app } from 'electron';
-import { getRStudioVersion } from '../shared/product-info';
-
-import fs from 'fs';
-import path from 'path';
-import { initializeLang } from './desktop-utils';
-
-export default class Main {
-  constructor() {
-  }
-
-  run() {
-
-    // look for a version check request; if we have one, just do that and exit
-    if (app.commandLine.hasSwitch('version')) {
-      console.log(getRStudioVersion());
-      app.exit(0);
-      return;
-    }
-
-    initializeLang();
-
-    app.exit(0);
-    return;
-  }
-};
+export function getRStudioVersion() {
+  // TODO: need to figure out how to set real build numbers for package build, etc.
+  return "1.5.0";
+}

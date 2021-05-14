@@ -19,6 +19,7 @@
     "build": "tsc",
     "watch": "tsc -w",
     "lint": "eslint -c .eslintrc --ext .ts ./src",
-    "start": "npm run build && electron ./dist/main/app.js"
+    "start": "yarn run build && electron ./dist/main/app.js",
+    "show-version": "yarn run build && electron ./dist/main/app.js --version"
   }
 }

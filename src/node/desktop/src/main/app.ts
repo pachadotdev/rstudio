@@ -17,7 +17,6 @@ import { app } from "electron";
 
 import Main from './main';
 
-// Where it all begins
 app.whenReady().then(() => {
   new Main().run();
 });
