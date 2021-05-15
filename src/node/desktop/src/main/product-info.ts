@@ -14,6 +14,6 @@
  */
 
 export function getRStudioVersion() {
-  // TODO: need to figure out how to set real build numbers for package build, etc.
+  // TODO: need to figure out how to consume build numbers for package build, etc.
   return "1.5.0";
 }

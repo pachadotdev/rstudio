@@ -1,5 +1,5 @@
 /*
- * main.ts
+ * system.ts
  *
  * Copyright (C) 2021 by RStudio, PBC
  *
@@ -13,29 +13,11 @@
  *
  */
 
-import { app } from 'electron';
-import { getRStudioVersion } from '../shared/product-info';
-
-import fs from 'fs';
-import path from 'path';
-import { initializeLang } from './desktop-utils';
-
-export default class Main {
-  constructor() {
-  }
-
-  run() {
-
-    // look for a version check request; if we have one, just do that and exit
-    if (app.commandLine.hasSwitch('version')) {
-      console.log(getRStudioVersion());
-      app.exit(0);
-      return;
-    }
-
-    initializeLang();
-
-    app.exit(0);
+export function initHook() {
+  if (process.platform !== 'win32' ) {
     return;
   }
-};
+
+  // TODO: Windows implementation from Win32System.cpp
+}
+

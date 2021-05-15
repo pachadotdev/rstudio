@@ -15,8 +15,8 @@
 
 import { app } from "electron";
 
-import Main from './main';
+import DesktopMain from "./desktop-main";
 
 app.whenReady().then(() => {
-  new Main().run();
+  new DesktopMain().run();
 });
