@@ -57,7 +57,7 @@ export function removeStaleOptionsLockfile() {
 }
 
 function randomString() {
-  return (Math.random() * 2147483647).toString();
+  return Math.trunc((Math.random() * 2147483647)).toString();
 }
 
 export function initializeSharedSecret() {
