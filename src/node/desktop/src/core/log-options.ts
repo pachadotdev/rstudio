@@ -13,8 +13,9 @@
  *
  */
 
-import * as log from "./log"
+import * as log from "./log";
 import fs from 'fs';
+import { getenv } from '../core/environment';
 
 export class StdErrLogOptions {}
 export class SysLogOptions {}
@@ -75,7 +76,7 @@ export class LogOptions
    
   read() {
     // first, look for config file in a specific environment variable
-    let optionsFile = process.env[kLogConfEnvVar] ?? "";
+    let optionsFile = getenv(kLogConfEnvVar);
     if (!fs.existsSync(optionsFile)) {
       // desktop - read user file first, and only read admin file if the user file does not exist
       optionsFile = core::system::xdg::userConfigDir().completeChildPath(kLogConfFile);

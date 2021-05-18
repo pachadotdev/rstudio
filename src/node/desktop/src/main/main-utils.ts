@@ -18,10 +18,11 @@
 import { app } from 'electron';
 import fs from 'fs';
 import path from 'path';
+import { getenv, setenv } from '../core/environment';
 
 export function augmentCommandLineArguments() {
-  const user = process.env.RSTUDIO_CHROMIUM_ARGUMENTS ?? '';
-  if (user.length == 0) {
+  const user = getenv('RSTUDIO_CHROMIUM_ARGUMENTS');
+  if (!user) {
     return;
   }
 
@@ -38,8 +39,8 @@ export function removeStaleOptionsLockfile() {
     return;
   }
 
-  const appData = process.env.APPDATA ?? '';
-  if (!appData.length) {
+  const appData = getenv('APPDATA');
+  if (!appData) {
     return;
   }
 
@@ -62,7 +63,7 @@ function randomString() {
 
 export function initializeSharedSecret() {
   const sharedSecret = randomString() + randomString() + randomString();
-  process.env.RS_SHARED_SECRET = sharedSecret;
+  setenv('RS_SHARED_SECRET', sharedSecret);
 }
 
 // void initializeWorkingDirectory(int /*argc*/,

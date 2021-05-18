@@ -34,6 +34,7 @@
 
 import os from 'os';
 import path from 'path';
+import { getenv, setenv } from '../core/environment';
 
 enum WinFolderID {
   FOLDERID_RoamingAppData,
@@ -58,7 +59,7 @@ function SHGetKnownFolderPath(folderId: WinFolderID): string {
       envVar = "ProgramData";
       break;
   }
-  return process.env[envVar] ?? "";
+  return getenv(envVar);
 }
 
 /**
@@ -101,12 +102,12 @@ function resolveXdgDir(
   let finalPath = true;
 
    // Look for the RStudio-specific environment variable
-  let env = process.env[rstudioEnvVar] ?? '';
+  let env = getenv(rstudioEnvVar);
   if (!env) {
     // The RStudio environment variable specifices the final path; if it isn't
     // set we will need to append "rstudio" to the path later.
     finalPath = false;
-    env = process.env[xdgEnvVar] ?? '';
+    env = getenv(xdgEnvVar);
   }
 
   if (!env) {
@@ -132,8 +133,8 @@ function resolveXdgDir(
   }
 
   // expand HOME, USER, and HOSTNAME if given
-  process.env.HOME = homeDir ? path.resolve(homeDir) :
-                               path.resolve(userHomePath());
+  setenv("HOME", homeDir ? path.resolve(homeDir) :
+                           path.resolve(userHomePath()));
   
    core::system::setenv(&environment, "HOME",
                         homeDir ? homeDir->getAbsolutePath() :
@@ -172,115 +173,66 @@ function resolveXdgDir(
    );
 }
 
-} // anonymous namespace
+/**
+ * Returns the RStudio XDG user config directory.
+ * 
+ * On Unix-alikes, this is ~/.config/rstudio, or XDG_CONFIG_HOME.
+ * On Windows, this is 'FOLDERID_RoamingAppData' (typically 'AppData/Roaming').
+ */
+export function userConfigDir(user?: string, homeDir?: string) {
+  return resolveXdgDir(
+    "RSTUDIO_CONFIG_HOME",
+    "XDG_CONFIG_HOME",
+    WinFolderID.FOLDERID_RoamingAppData,
+    "~/.config",
+    user,
+    homeDir
+  );
+}
 
-// Returns the RStudio XDG user config directory.
-//
-// On Unix-alikes, this is ~/.config/rstudio, or XDG_CONFIG_HOME.
-// On Windows, this is 'FOLDERID_RoamingAppData' (typically 'AppData/Roaming').
-export FilePath userConfigDir(
-   const boost::optional<std::string>& user,
-   const boost::optional<FilePath>& homeDir)
-{
-   return resolveXdgDir("RSTUDIO_CONFIG_HOME",
-        "XDG_CONFIG_HOME",
-#ifdef _WIN32
-         FOLDERID_RoamingAppData,
-#endif
-         "~/.config",
-         user,
-         homeDir
+/**
+ * Returns the RStudio XDG user data directory.
+ *
+ * On Unix-alikes, this is ~/.local/share/rstudio, or XDG_DATA_HOME.
+ * On Windows, this is 'FOLDERID_LocalAppData' (typically 'AppData/Local').
+ */
+export function userDataDir(user?: string, homeDir?: string) {
+  return resolveXdgDir(
+    "RSTUDIO_DATA_HOME",
+    "XDG_DATA_HOME",
+    WinFolderID.FOLDERID_LocalAppData,
+    "~/.local/share",
+    user,
+    homeDir
    );
 }
 
-// Returns the RStudio XDG user data directory.
-//
-// On Unix-alikes, this is ~/.local/share/rstudio, or XDG_DATA_HOME.
-// On Windows, this is 'FOLDERID_LocalAppData' (typically 'AppData/Local').
-export FilePath userDataDir(
-        const boost::optional<std::string>& user,
-        const boost::optional<FilePath>& homeDir)
-{
-   return resolveXdgDir("RSTUDIO_DATA_HOME",
-         "XDG_DATA_HOME",
-#ifdef _WIN32
-         FOLDERID_LocalAppData,
-#endif
-         "~/.local/share",
-         user,
-         homeDir
-   );
-}
-
-// This function verifies that the userConfigDir() and userDataDir() exist and are owned by the running user.
-// 
-// It should be invoked once. Any issues with these directories will be emitted to the session log.
-export void verifyUserDirs(
-   const boost::optional<std::string>& user,
-   const boost::optional<FilePath>& homeDir)
-{
-#ifndef _WIN32
-   auto testDir = [](const FilePath& dir, const ErrorLocation& errorLoc)
-   {
-      Error error, permError;
-      if (dir.exists())
-      {
-         bool writeable = false;
-         // Test the directory for write access; this just checks the directory itself for a write
-         // access bit. 
-         error = dir.isWriteable(writeable);
-         if (error)
-         {
-            // We couldn't even read the directory's access bits
-            rstudio::core::log::logWarningMessage("Could not access " + dir.getAbsolutePath() + 
-                  " to check write " "permissions. Some features may not work correctly.",
-                  errorLoc);
-            rstudio::core::log::logError(error, errorLoc);
-         }
-         else if (!writeable)
-         {
-            // We determined that the directory was not writable. There's nothing we can do to
-            // correct this, so just log a warning to help diagnose downstream failures (which are
-            // virtually guaranteed).
-            rstudio::core::log::logWarningMessage("Missing write permissions to " + 
-                  dir.getAbsolutePath() + ". Some features may not work correctly.",
-                  errorLoc);
-         }
-      }
-   };
-
-   testDir(userConfigDir(user, homeDir), ERROR_LOCATION);
-   testDir(userDataDir(user, homeDir), ERROR_LOCATION);
-#endif
-}
-
-// Returns the RStudio XDG system config directory.
-//
-// On Unix-alikes, this is /etc/rstudio, XDG_CONFIG_DIRS.
-// On Windows, this is 'FOLDERID_ProgramData' (typically 'C:/ProgramData').
-export FilePath systemConfigDir()
-{
-#ifndef _WIN32
-   if (getenv("RSTUDIO_CONFIG_DIR").empty())
-   {
+/**
+ * Returns the RStudio XDG system config directory.
+ *
+ * On Unix-alikes, this is /etc/rstudio, XDG_CONFIG_DIRS.
+ * On Windows, this is 'FOLDERID_ProgramData' (typically 'C:/ProgramData').
+ */
+export function systemConfigDir() {
+  if (process.platform !== 'win32') {
+    if (getenv("RSTUDIO_CONFIG_DIR").empty()) {
       // On POSIX operating systems, it's possible to specify multiple config
       // directories. We have to select one, so read the list and take the first
       // one that contains an "rstudio" folder.
-      std::string env = getenv("XDG_CONFIG_DIRS");
-      if (env.find_first_of(":") != std::string::npos)
+      std:: string env = getenv("XDG_CONFIG_DIRS");
+      if (env.find_first_of(":") != std:: string:: npos)
       {
-         std::vector<std::string> dirs = algorithm::split(env, ":");
-         for (const std::string& dir: dirs)
-         {
-            FilePath resolved = FilePath(dir).completePath("rstudio");
-            if (resolved.exists())
-            {
-               return resolved;
-            }
-         }
+        std:: vector < std:: string > dirs = algorithm:: split(env, ":");
+        for (const std:: string& dir: dirs)
+        {
+          FilePath resolved = FilePath(dir).completePath("rstudio");
+          if (resolved.exists()) {
+            return resolved;
+          }
+        }
       }
-   }
-#endif
+    }
+  }
    return resolveXdgDir("RSTUDIO_CONFIG_DIR",
          "XDG_CONFIG_DIRS",
 #ifdef _WIN32

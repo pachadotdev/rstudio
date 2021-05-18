@@ -14,6 +14,7 @@
  */
 
 import { systemPreferences } from 'electron';
+import { getenv } from 'src/core/environment';
 
 // NOTE: this code is duplicated in diagnostics as well (and also in
 // SessionOptions.hpp although the code path isn't exactly the same)
@@ -55,8 +56,8 @@ export function initializeLang() {
 
   // Next highest precedence: LANG environment variable.
   if (!lang) {
-    let envLang = process.env.LANG ?? "";
-    if (!envLang.length) {
+    let envLang = getenv('LANG');
+    if (!envLang) {
       lang = envLang;
     }
   }
