@@ -20,13 +20,13 @@ import fs from 'fs';
 import path from 'path';
 
 export function augmentCommandLineArguments() {
-  const user = process.env.RSTUDIO_CHROMIUM_ARGUMENTS ?? "";
+  const user = process.env.RSTUDIO_CHROMIUM_ARGUMENTS ?? '';
   if (user.length == 0) {
     return;
   }
-   
-  const pieces = user.split(" ");
-  pieces.forEach(piece => app.commandLine.appendArgument(piece));
+
+  const pieces = user.split(' ');
+  pieces.forEach((piece) => app.commandLine.appendArgument(piece));
 }
 
 // attempt to remove stale lockfiles that might inhibit
@@ -34,16 +34,16 @@ export function augmentCommandLineArguments() {
 // an error only when a stale lockfile exists, but
 // we could not successfully remove it
 export function removeStaleOptionsLockfile() {
-  if (process.platform != 'win32') {
+  if (process.platform !== 'win32') {
     return;
   }
 
-  const appData = process.env.APPDATA ?? "";
+  const appData = process.env.APPDATA ?? '';
   if (!appData.length) {
     return;
   }
 
-  const lockFilePath = path.join(appData, "RStudio/desktop.ini.lock");
+  const lockFilePath = path.join(appData, 'RStudio/desktop.ini.lock');
   if (!fs.existsSync(lockFilePath)) {
     return;
   }
@@ -57,12 +57,12 @@ export function removeStaleOptionsLockfile() {
 }
 
 function randomString() {
-  return Math.trunc((Math.random() * 2147483647)).toString();
+  return Math.trunc(Math.random() * 2147483647).toString();
 }
 
 export function initializeSharedSecret() {
-   const sharedSecret = randomString() + randomString() + randomString();
-   process.env.RS_SHARED_SECRET = sharedSecret;
+  const sharedSecret = randomString() + randomString() + randomString();
+  process.env.RS_SHARED_SECRET = sharedSecret;
 }
 
 // void initializeWorkingDirectory(int /*argc*/,
@@ -206,16 +206,16 @@ export function initializeSharedSecret() {
 // {
 //    if (::GetSystemMetrics(SM_REMOTESESSION))
 //       return true;
-   
+
 //    core::system::RegistryKey key;
 //    Error error = key.open(
 //             HKEY_LOCAL_MACHINE,
 //             "SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\",
 //             KEY_READ);
-   
+
 //    if (error)
 //       return false;
-   
+
 //    DWORD dwGlassSessionId;
 //    DWORD cbGlassSessionId = sizeof(dwGlassSessionId);
 //    DWORD dwType;
@@ -230,13 +230,13 @@ export function initializeSharedSecret() {
 
 //    if (lResult != ERROR_SUCCESS)
 //       return false;
-   
+
 //    DWORD dwCurrentSessionId;
 //    if (ProcessIdToSessionId(GetCurrentProcessId(), &dwCurrentSessionId))
 //       return dwCurrentSessionId != dwGlassSessionId;
-   
+
 //    return false;
-   
+
 // }
 
 // } // end anonymous namespace
@@ -358,7 +358,7 @@ export function initializeRenderingEngine() {
   //  else if (engine == QStringLiteral("software")) {
   //    QCoreApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
   //    QQuickWindow::setSceneGraphBackend(QSGRendererInterface::Software);
-  // 
+  //
   //    // allow WebGL rendering with the software renderer
   //    static char enableWebglSoftwareRendering[] = "--enable-webgl-software-rendering";
   //    pArguments->push_back(enableWebglSoftwareRendering);
@@ -414,15 +414,15 @@ export function initializeRenderingEngine() {
 // }
 
 export function getSessionServer(): string {
-// #if DESKTOP_PRO
-//   return desktop::optionsPro().getSessionServer();
-// #else // OPEN_SOURCE
-  return "";
+  // #if DESKTOP_PRO
+  //   return desktop::optionsPro().getSessionServer();
+  // #else // OPEN_SOURCE
+  return '';
 }
 
 export function getSessionUrl(): string {
-// #if DESKTOP_PRO
-//   return desktop::optionsPro().getSessionUrl();
-// #else // OPEN_SOURCE
-  return "";
+  // #if DESKTOP_PRO
+  //   return desktop::optionsPro().getSessionUrl();
+  // #else // OPEN_SOURCE
+  return '';
 }

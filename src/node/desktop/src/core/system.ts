@@ -13,6 +13,9 @@
  *
  */
 
+import * as log from './log';
+import { LogOptions } from './log-options';
+
 export function initHook() {
   if (process.platform !== 'win32' ) {
     return;
@@ -21,3 +24,30 @@ export function initHook() {
   // TODO: Windows implementation from Win32System.cpp
 }
 
+// logger's program identity (this process's binary name)
+export let s_programIdentity = "";
+
+// logging options representing the latest state of the logging configuration file
+export let s_logOptions: LogOptions;
+
+export function initializeLog(
+  programIdentity: string,
+  logLevel: log.LogLevel,
+  logDir: string,
+  enableConfigReload: boolean
+) {
+  // create default file logger options
+  const options = new log.FileLogOptions(logDir);
+
+  s_logOptions = new LogOptions(programIdentity, logLevel, log:: LoggerType:: kFile, options));
+  s_programIdentity = programIdentity;
+
+  Error error = initLog();
+  if (error)
+    return error;
+
+  if (enableConfigReload)
+    initializeLogConfigReload();
+
+return Success();
+}

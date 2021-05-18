@@ -15,6 +15,16 @@
 
 import { systemPreferences } from 'electron';
 
+// NOTE: this code is duplicated in diagnostics as well (and also in
+// SessionOptions.hpp although the code path isn't exactly the same)
+export function userLogPath() {
+  // return core::system::xdg::userDataDir().completeChildPath("log");
+}
+
+export function userWebCachePath() {
+  return core::system::xdg::userDataDir().completeChildPath("web-cache");
+}
+
 export function initializeLang() {
 
   if (process.platform !== 'darwin') {

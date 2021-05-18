@@ -16,8 +16,9 @@
 import { app } from 'electron';
 import { getRStudioVersion } from './product-info';
 import { initializeLang } from './desktop-utils';
-import { initHook } from '../core/system';
-import * as main from './desktop-main-utils';
+import { initHook, initializeLog } from '../core/system';
+import * as mainUtils from './main-utils';
+import * as log from "../core/log";
 
 // QProcess* pRSessionProcess;
 // QString sharedSecret;
@@ -53,13 +54,12 @@ export default class DesktopMain {
     }
 
     initializeLang();
-    main.initializeRenderingEngine();
+    mainUtils.initializeRenderingEngine();
 
-//       // initialize log
-//       core::system::initializeLog("rdesktop",
-//                                   core::log::LogLevel::WARN,
-//                                   desktop::userLogPath());
+     // initialize log
+     initializeLog("rdesktop", log.LogLevel.WARN, desktop::userLogPath());
 
+// TODO: crash handling
 //       // catch unhandled exceptions
 //       error = core::crash_handler::initialize(core::crash_handler::ProgramMode::Desktop);
 //       if (error)
