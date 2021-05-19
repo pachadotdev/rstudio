@@ -15,7 +15,7 @@
 
 import { app } from 'electron';
 import { getRStudioVersion } from './product-info';
-import { initializeLang } from './desktop-utils';
+import { initializeLang, userLogPath } from './desktop-utils';
 import { initHook, initializeLog } from '../core/system';
 import * as mainUtils from './main-utils';
 import * as log from "../core/log";
@@ -61,7 +61,7 @@ export default class Main {
     mainUtils.initializeRenderingEngine();
 
      // initialize log
-     initializeLog("rdesktop", log.LogLevel.WARN, desktop::userLogPath());
+     initializeLog("rdesktop", log.LogLevel.WARN, userLogPath());
 
 // TODO: crash handling
 //       // catch unhandled exceptions
@@ -72,7 +72,7 @@ export default class Main {
     // attempt to remove stale lockfiles, as they can impede
     // application startup
     try {
-      main.removeStaleOptionsLockfile();
+      mainUtils.removeStaleOptionsLockfile();
     } catch (error) {
       console.log(error); // TODO: LOG_ERROR
     }
@@ -181,7 +181,7 @@ export default class Main {
 // #endif
       
       // allow users to supply extra command-line arguments
-      main.augmentCommandLineArguments();
+      mainUtils.augmentCommandLineArguments();
 
 //       // prepare application for launch
 //       boost::scoped_ptr<QApplication> pApp;

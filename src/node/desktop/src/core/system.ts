@@ -47,7 +47,7 @@ export function initializeLog(
   programIdentity: string,
   logLevel: log.LogLevel,
   logDir: string,
-  enableConfigReload: boolean
+  enableConfigReload = true
 ) {
   // create default file logger options
   const options = new log.FileLogOptions(logDir);
