@@ -13,6 +13,7 @@
  *
  */
 
+import { getenv } from './environment';
 import * as log from './log';
 import { LogOptions } from './log-options';
 
@@ -30,6 +31,18 @@ export let s_programIdentity = "";
 // logging options representing the latest state of the logging configuration file
 export let s_logOptions: LogOptions;
 
+function initLog() {
+  // requires prior synchronization
+
+  Error error = s_logOptions.read();
+  if (error)
+    return error;
+
+  initializeLogWriters();
+
+  return Success();
+}
+
 export function initializeLog(
   programIdentity: string,
   logLevel: log.LogLevel,
@@ -39,7 +52,7 @@ export function initializeLog(
   // create default file logger options
   const options = new log.FileLogOptions(logDir);
 
-  s_logOptions = new LogOptions(programIdentity, logLevel, log:: LoggerType:: kFile, options));
+  s_logOptions = new LogOptions(programIdentity, logLevel, log.LoggerType.kFile, options);
   s_programIdentity = programIdentity;
 
   Error error = initLog();
@@ -50,4 +63,13 @@ export function initializeLog(
     initializeLogConfigReload();
 
 return Success();
+}
+
+export function userHomePath(envOverride?: string) {
+  return "TODO";
+}
+
+export function username() {
+  const userVar = process.platform === 'win32' ? 'USERNAME' : 'USER';
+  return getenv(userVar);
 }

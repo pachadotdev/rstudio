@@ -34,7 +34,9 @@
 
 import os from 'os';
 import path from 'path';
-import { getenv, setenv } from '../core/environment';
+import { expandEnvVars, getenv, setenv, EnvOption } from '../core/environment';
+import { username, userHomePath } from '../core/system';
+import { resolveAliasedPath } from '../core/file-path';
 
 enum WinFolderID {
   FOLDERID_RoamingAppData,
@@ -133,44 +135,38 @@ function resolveXdgDir(
   }
 
   // expand HOME, USER, and HOSTNAME if given
-  setenv("HOME", homeDir ? path.resolve(homeDir) :
-                           path.resolve(userHomePath()));
-  
-   core::system::setenv(&environment, "HOME",
-                        homeDir ? homeDir->getAbsolutePath() :
-                                  userHomePath().getAbsolutePath());
-   core::system::setenv(&environment, "USER",
-                        user ? *user : username());
+  let environment = new Array<EnvOption>();
+  environment.push({
+    name: "HOME",
+    value: homeDir ? path.resolve(homeDir) : path.resolve(userHomePath())
+  });
+  environment.push({
+    name: "USER",
+    value: user ? user : username()
+  });
 
-   // check for manually specified hostname in environment variable
-   std::string hostname = core::system::getenv("HOSTNAME");
+  // check for manually specified hostname in environment variable
+  let hostname = getenv("HOSTNAME");
 
-   // when omitted, look up the hostname using a system call
-   if (hostname.empty())
-   {
-      hostname = getHostname();
-   }
-   core::system::setenv(&environment, "HOSTNAME", hostname);
+  // when omitted, look up the hostname using a system call
+  if (!hostname) {
+    hostname = getHostname();
+  }
+  environment.push({ name: "HOSTNAME", value: hostname });
 
-   std::string expanded = core::system::expandEnvVars(environment, xdgHome.getAbsolutePath());
+  const expanded = expandEnvVars(environment, path.resolve(xdgHome));
 
-   // resolve aliases in the path
-   xdgHome = FilePath::resolveAliasedPath(expanded, homeDir ? *homeDir : userHomePath());
+  // resolve aliases in the path
+  xdgHome = resolveAliasedPath(expanded, homeDir ? homeDir : userHomePath());
 
-   // If this is the final path, we can return it as-is
-   if (finalPath)
-   {
-      return xdgHome;
-   }
+  // If this is the final path, we can return it as-is
+  if (finalPath) {
+    return xdgHome;
+  }
 
-   // Otherwise, it's a root folder in which we need to create our own subfolder
-   return xdgHome.completePath(
-#ifdef _WIN32
-      "RStudio"
-#else
-      "rstudio"
-#endif
-   );
+  // Otherwise, it's a root folder in which we need to create our own subfolder
+  const folderName = process.platform === 'win32' ? 'RStudio' : 'rstudio';
+  return path.join(xdgHome, folderName);
 }
 
 /**

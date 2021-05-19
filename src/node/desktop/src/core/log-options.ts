@@ -74,7 +74,7 @@ export class LogOptions
     // boost::apply_visitor(visitor, defaultLoggerOptions_);
    }
    
-  read() {
+  read(): Error {
     // first, look for config file in a specific environment variable
     let optionsFile = getenv(kLogConfEnvVar);
     if (!fs.existsSync(optionsFile)) {

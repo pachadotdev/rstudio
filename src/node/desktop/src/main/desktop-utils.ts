@@ -19,7 +19,7 @@ import { getenv } from 'src/core/environment';
 // NOTE: this code is duplicated in diagnostics as well (and also in
 // SessionOptions.hpp although the code path isn't exactly the same)
 export function userLogPath() {
-  // return core::system::xdg::userDataDir().completeChildPath("log");
+  return xdg::userDataDir().completeChildPath("log");
 }
 
 export function userWebCachePath() {
