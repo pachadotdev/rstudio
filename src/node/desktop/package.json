@@ -23,8 +23,8 @@
     "build": "tsc",
     "watch": "tsc -w",
     "lint": "eslint -c .eslintrc --ext .ts ./src",
-    "start": "yarn run build && electron ./dist/main/app.js",
-    "show-version": "yarn run build && electron ./dist/main/app.js --version",
-    "test": "mocha --require ts-node/register"
+    "start": "yarn run build && electron ./dist/main/main.js",
+    "show-version": "yarn run build && electron ./dist/main/main.js --version",
+    "test": "./node_modules/.bin/mocha --require ts-node/register ./test/*.spec.ts"
   }
 }

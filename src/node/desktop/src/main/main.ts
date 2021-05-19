@@ -20,10 +20,14 @@ import { initHook, initializeLog } from '../core/system';
 import * as mainUtils from './main-utils';
 import * as log from "../core/log";
 
+app.whenReady().then(() => {
+  new Main().run();
+});
+
 // QProcess* pRSessionProcess;
 // QString sharedSecret;
 
-export default class DesktopMain {
+export default class Main {
   constructor() {
   }
 
