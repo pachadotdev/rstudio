@@ -13,6 +13,8 @@
  *
  */
 
+import process from 'process';
+
 export interface Option {
   name: string,
   value: string
