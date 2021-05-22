@@ -1,5 +1,5 @@
 /*
- * err.ts
+ * user.spec.ts
  *
  * Copyright (C) 2021 by RStudio, PBC
  *
@@ -13,19 +13,20 @@
  *
  */
 
-/**
- * Type to return from non-throwing functions. Enables returning null
- * to represent "no error" aka Success. Per existing pattern in RStudio code,
- * we expect an "Err" result to be falsy if there is no error, and truthy if
- * there is an error.
- */
+import { describe } from "mocha";
+import { expect } from "chai";
 
-export type Err = Error | null;
+import fs from 'fs';
 
-/**
- * Convenience function for returning "no error" state from a function that
- * can return an Error.
- */
-export function Success(): null {
-  return null;
-}
+import { Err, Success } from '../src/err';
+import { User } from '../src/user';
+
+describe("User", () => {
+  describe("Static helpers", () => {
+    it("getUserHomePath returns a valid path", () => {
+      const path = User.getUserHomePath();
+      expect(fs.existsSync(path.getAbsolutePath())).is.true;
+    });
+  });
+});
+ 

@@ -16,18 +16,27 @@
 import { describe } from "mocha";
 import { expect } from "chai";
 
-import { FilePath } from "../src/file-path";
 import fs from "fs";
 import path from "path";
 import os from "os";
-import { Err, Success } from "../src/err";
-import { fileURLToPath } from "url";
+
+import { FilePath } from "../src/file-path";
 
 function randomString() {
   return Math.trunc(Math.random() * 2147483647).toString();
 }
 
+function real(path: string): string {
+  return fs.realpathSync(path);
+}
+
+const bogusPath = "/super/bogus/path/42";
+
 describe("FilePath", () => {
+  afterEach(() => {
+    // make sure we leave cwd in a valid place
+    process.chdir(__dirname);
+  });
   describe("Constructor checks", () => {
     it("Should store and return the supplied path", () => {
       const path = "hello/world";
@@ -41,51 +50,69 @@ describe("FilePath", () => {
   });
 
   describe("Get a safe current path", () => {
-    it("Should return current working directory if it exists", () => {
+    it("safeCurrentPath should return current working directory if it exists", () => {
       const cwd = new FilePath(process.cwd());
-      const rootPath = new FilePath('/');
+      const rootPath = new FilePath("/");
       const currentPath = FilePath.safeCurrentPath(rootPath);
       expect(currentPath.getAbsolutePath()).to.equal(cwd.getAbsolutePath());
-      expect(cwd.getAbsolutePath()).to.equal(process.cwd());
+      expect(real(cwd.getAbsolutePath())).to.equal(real(process.cwd()));
     });
-    it("Should change to supplied safe path and return it if cwd doesn't exist", () => {
+    it("safeCurrentPath should change to supplied safe path if it exists if cwd doesn't exist", () => {
       const origDir = new FilePath(process.cwd());
 
       // create a temp folder, chdir to it, then delete it
-      const testDir = path.join(os.tmpdir(), 'temp-folder-for-FilePath-tests-' + randomString());
+      let testDir = path.join(
+        os.tmpdir(),
+        "temp-folder-for-FilePath-tests-" + randomString()
+      );
       fs.mkdirSync(testDir);
       process.chdir(testDir);
+      testDir = real(testDir);
       fs.rmdirSync(testDir);
 
       const currentPath = FilePath.safeCurrentPath(origDir);
-      //expect(currentPath.path).to.not.equal(cwd.path);
-      //expect(rootPath.path).to.equal(process.cwd());
+      expect(real(origDir.getAbsolutePath())).to.equal(real(process.cwd()));
+      expect(real(currentPath.getAbsolutePath())).to.equal(real(process.cwd()));
     });
-  });
+    it("safeCurrentPath should change to home folder when both cwd and revert paths don't exist", () => {
+      // create a temp folder, chdir to it, then delete it
+      let testDir = path.join(
+        os.tmpdir(),
+        "temp-folder-for-FilePath-tests-" + randomString()
+      );
+      fs.mkdirSync(testDir);
+      process.chdir(testDir);
+      testDir = real(testDir);
+      fs.rmdirSync(testDir);
+
+      const currentPath = FilePath.safeCurrentPath(new FilePath(bogusPath));
+      expect(real(currentPath.getAbsolutePath())).to.equal(real(os.homedir()));
+    });
+ });
 
   describe("Path existence checks", () => {
-    it("Should detect if this object's path is empty", () => {
+    it("isEmpty should detect if this object's path is empty", () => {
       expect(new FilePath().isEmpty()).is.true;
     });
-    it("Should detect when object's path exists", () => {
+    it("exists should detect when object's path exists", () => {
       expect(new FilePath(os.tmpdir()).exists()).is.true;
     });
-    it("Should detect when object's path doesn't exist", () => {
-      expect(new FilePath("/super/bogus/path/42").exists()).is.false;
+    it("exists should detect when object's path doesn't exist", () => {
+      expect(new FilePath(bogusPath).exists()).is.false;
     });
-    it("Should detect when a supplied path exists", () => {
+    it("exists should detect when a supplied path exists", () => {
       expect(FilePath.exists(os.tmpdir())).is.true;
     });
-    it("Should detect when a supplied path doesn't exist", () => {
-      expect(FilePath.exists("/super/bogus/path/42")).is.false;
+    it("exists should detect when a supplied path doesn't exist", () => {
+      expect(FilePath.exists(bogusPath)).is.false;
     });
-    it("Should return false for existence of a null path", () => {
+    it("exists should return false for existence of a null path", () => {
       expect(new FilePath().exists()).is.false;
     });
   });
 
   describe("Directory creation", () => {
-    it("Should create directory stored in FilePath", () => {
+    it("createDirectory should create directory stored in FilePath", () => {
       const target = path.join(os.tmpdir(), randomString());
       const fp = new FilePath(target);
       const result = fp.createDirectory();
@@ -93,7 +120,7 @@ describe("FilePath", () => {
       expect(fp.exists()).is.true;
       fs.rmdirSync(target);
     });
-    it("Should succeed if directory in FilePath already exists", () => {
+    it("createDirectory should succeed if directory in FilePath already exists", () => {
       const target = path.join(os.tmpdir(), randomString());
       const fp = new FilePath(target);
       let result = fp.createDirectory();
@@ -103,7 +130,7 @@ describe("FilePath", () => {
       expect(fp.exists()).is.true;
       fs.rmdirSync(target);
     });
-    it("Should create directory relative to path in FilePath", () => {
+    it("createDirectory should create directory relative to path in FilePath", () => {
       const target = randomString();
       const fp = new FilePath(os.tmpdir());
       const result = fp.createDirectory(target);
@@ -112,7 +139,7 @@ describe("FilePath", () => {
       expect(fs.existsSync(newPath)).is.true;
       fs.rmdirSync(newPath);
     });
-    it("Should create multiple directories", () => {
+    it("createDirectory should recursively create directories", () => {
       const target = path.join(os.tmpdir(), randomString(), randomString());
       const fp = new FilePath(target);
       const result = fp.createDirectory();
@@ -120,7 +147,7 @@ describe("FilePath", () => {
       expect(fp.exists()).is.true;
       fs.rmdirSync(target);
     });
-    it("Should create multiple directories relative to path in FilePath", () => {
+    it("createDirectory should recursively create directories relative to path in FilePath", () => {
       const firstLevel = randomString();
       const extraFolder = randomString();
       const target = path.join(os.tmpdir(), firstLevel, randomString());
@@ -131,13 +158,13 @@ describe("FilePath", () => {
       expect(fs.existsSync(newPath)).is.true;
       fs.rmdirSync(path.join(os.tmpdir(), firstLevel), { recursive: true });
     });
-    it("Should return success when asked to ensure existing directory exists", () => {
+    it("ensureDirectory should return success when asked to ensure existing directory exists", () => {
       const existingFolder = new FilePath(os.homedir());
       expect(existingFolder.exists()).is.true;
       const result = existingFolder.ensureDirectory();
       expect(!!result).is.false;
     });
-    it("Should create directory when asked to ensure it exists", () => {
+    it("ensureDirectory should create directory when asked to ensure it exists", () => {
       const newFolder = path.join(os.tmpdir(), randomString());
       const newFilePath = new FilePath(newFolder);
       expect(fs.existsSync(newFolder)).is.false;
@@ -146,5 +173,21 @@ describe("FilePath", () => {
       expect(fs.existsSync(newFolder)).is.true;
       fs.rmdirSync(newFolder);
     });
- });
+  });
+  describe("Manipulate current working directory", () => {
+    it("makeCurrentPath should change cwd to existing folder", () => {
+      const cwd = new FilePath(process.cwd());
+      const newFolder = path.join(os.tmpdir(), randomString());
+      fs.mkdirSync(newFolder);
+      const newFilePath = new FilePath(newFolder);
+      const result = newFilePath.makeCurrentPath();
+      expect(!!result).is.false;
+      expect(real(process.cwd())).equals(real(newFolder));
+      process.chdir(cwd.getAbsolutePath());
+      fs.rmdirSync(newFolder);
+    });
+  });
+  describe("completePath should do what's expected", () => {
+
+  });
 });

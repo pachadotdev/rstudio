@@ -16,15 +16,20 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { Err, Success, UnexpectedExceptionError } from './err';
+import { Err, Success } from './err';
+import { User } from './user'
 
 function logError(path: string, error: Err) {
   // TODO logging
 }
 
-// TODO replace this temp stub with code in user.ts
-function getUserHomePath() {
-  return new FilePath(os.homedir());
+// Analogous to BOOST_FS_COMPLETE in FilePath.cpp
+function fs_complete(p: string, base: string) {
+  return path.join(base, p);
+}
+// Analogous to BOOST_FS_PATH2STR
+function fs_path2str(p: string): string {
+  return p;
 }
 
 /**
@@ -44,25 +49,19 @@ export class FilePath {
   /**
    * Resolves the '~' alias within the path to the user's home path.
    */
-  static resolveAliasedPath(
-    aliasedPath: string,
-    userHomePath: FilePath
-  ): FilePath {
+  static resolveAliasedPath(aliasedPath: string, userHomePath: FilePath): FilePath {
     // Special case for empty string or "~"
-    if (!aliasedPath || aliasedPath == this.homePathLeafAlias) {
+    if (!aliasedPath || aliasedPath == this.homePathLeafAlias)
       return userHomePath;
-    }
 
     // if the path starts with the home alias then substitute the home path
     if (aliasedPath.startsWith(this.homePathAlias)) {
-      const resolvedPath =
-        userHomePath.getAbsolutePath() + aliasedPath.substr(1);
+      const resolvedPath = userHomePath.getAbsolutePath() + aliasedPath.substr(1);
       return new FilePath(resolvedPath);
     } else {
       // no aliasing, this is either an absolute path or path
       // relative to the current directory
-      // return FilePath.safeCurrentPath(userHomePath).completePath(aliasedPath);
-      return new FilePath();
+      return FilePath.safeCurrentPath(userHomePath).completePath(aliasedPath);
     }
   }
 
@@ -75,20 +74,15 @@ export class FilePath {
     try {
       return new FilePath(process.cwd());
     }
-    catch (error) {
-      if (error instanceof Error) {
-        // TODO log::logError(Error(e.code(), ERROR_LOCATION));
-      } else {
-        const unexpected = UnexpectedExceptionError(error, 'safeCurrentPath');
-        // TODO logging?
-      }
+    catch (err) {
+      // TODO log::logError(Error(err.code(), ERROR_LOCATION));
     }
 
     // revert to the specified path if it exists, otherwise
     // take the user home path from the system
     let safePath = revertToPath;
     if (!fs.existsSync(safePath.path)) {
-      safePath = getUserHomePath();
+      safePath = User.getUserHomePath();
     }
 
     let error = safePath.makeCurrentPath();
@@ -117,23 +111,20 @@ export class FilePath {
    * Changes the current working directory to location represented by this file path.
    */
   makeCurrentPath(autoCreate = false): Err {
-    // if (autoCreate) {
-    //   Error autoCreateError = ensureDirectory();
-    //   if (autoCreateError)
-    //     return autoCreateError;
-    // }
+    if (autoCreate) {
+      const autoCreateError = this.ensureDirectory();
+      if (autoCreateError)
+        return autoCreateError;
+    }
 
-    // try
-    // {
-    //   boost::filesystem::current_path(m_impl->Path);
-    //   return Success();
-    // }
-    // catch(const boost::filesystem::filesystem_error& e)
-    // {
-    //   Error error(e.code(), ERROR_LOCATION);
-    //   addErrorProperties(m_impl->Path, &error);
-    //   return error;
-    // }
+    try {
+      process.chdir(this.path);
+      return Success();
+    }
+    catch (err) {
+      // TODO addErrorProperties(m_impl->Path, &error);
+      return err;
+    }
     return Success();
   }
 
@@ -153,10 +144,8 @@ export class FilePath {
   exists(): boolean {
     try {
       return !this.isEmpty() && fs.existsSync(this.path);
-    } catch (error) {
-      if (error instanceof Error) {
-        logError(this.path, error);
-      }
+    } catch (err) {
+      logError(this.path, err);
       return false;
     }
   }
@@ -170,8 +159,8 @@ export class FilePath {
     }
     try {
       return fs.existsSync(filePath);
-    } catch (error) {
-      logError(filePath, error);
+    } catch (err) {
+      logError(filePath, err);
       return false;
     }
   }
@@ -184,21 +173,33 @@ export class FilePath {
     if (!filePath) {
       targetDirectory = this.path;
     } else {
-      targetDirectory = path.join(this.path, filePath);
+      targetDirectory = fs_complete(filePath, this.path);
     }
     try {
       fs.mkdirSync(targetDirectory, { recursive: true });
-    } catch (error) {
-      if (error instanceof Error) {
-        // TODO error reporting
-        // Error error(e.code(), ERROR_LOCATION);
-        // addErrorProperties(m_impl->Path, &error);
-        // error.addProperty("target-dir", in_filePath);
-        return error;
-      } else {
-        return new Error("Unexpected error type thrown in createDirectory");
-      }
+    } catch (err) {
+      // TODO addErrorProperties(this.path, &error);
+      // TODO error.addProperty("target-dir", filePath);
+      return err;
     }
     return Success();
+  }
+
+  /**
+   * Completes the provided path relative to this path. If the provided path is not relative,
+   * it will be returned as is. Relative paths such as ".." are permitted.
+   */
+  completePath(filePath: string): FilePath {
+    try {
+      return new FilePath(fs_path2str(fs_complete(filePath, this.path)));
+    }
+    catch (err) {
+      //Error error(e.code(), ERROR_LOCATION);
+      //addErrorProperties(m_impl -> Path, & error);
+      //error.addProperty("path", in_filePath);
+      // TODO logging log::logError(error);
+      return this;
+    }
+    return new FilePath(filePath);
   }
 }
