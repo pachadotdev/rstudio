@@ -19,17 +19,35 @@ import path from 'path';
 import { Err, Success } from './err';
 import { User } from './user'
 
-function logError(path: string, error: Err) {
+function logErrorWithPath(path: string, error: Error) {
   // TODO logging
+  console.error(error.message + ": " + path);
+}
+
+function logError(error: Error) {
+  // TODO logging
+  console.error(error.message);
 }
 
 // Analogous to BOOST_FS_COMPLETE in FilePath.cpp
 function fs_complete(p: string, base: string) {
-  return path.join(base, p);
+  return path.resolve(base, p);
 }
+
 // Analogous to BOOST_FS_PATH2STR
 function fs_path2str(p: string): string {
+  // TODO flesh this out on Windows
   return p;
+}
+
+function fromString(value: string): string {
+  // TODO flesh this out on Windows
+  return value;
+}
+
+function toString(value: string): string {
+  // TODO flesh this out on Windows
+  return value;
 }
 
 /**
@@ -40,7 +58,7 @@ export class FilePath {
   private path: string;
 
   constructor(path: string = "") {
-    this.path = path;
+    this.path = fromString(path);
   }
 
   static homePathAlias = "~/";
@@ -56,8 +74,7 @@ export class FilePath {
 
     // if the path starts with the home alias then substitute the home path
     if (aliasedPath.startsWith(this.homePathAlias)) {
-      const resolvedPath = userHomePath.getAbsolutePath() + aliasedPath.substr(1);
-      return new FilePath(resolvedPath);
+      return new FilePath(path.join(userHomePath.getAbsolutePath(), aliasedPath.substr(1)));
     } else {
       // no aliasing, this is either an absolute path or path
       // relative to the current directory
@@ -75,7 +92,7 @@ export class FilePath {
       return new FilePath(process.cwd());
     }
     catch (err) {
-      // TODO log::logError(Error(err.code(), ERROR_LOCATION));
+      logError(err);
     }
 
     // revert to the specified path if it exists, otherwise
@@ -87,7 +104,7 @@ export class FilePath {
 
     let error = safePath.makeCurrentPath();
     if (error) {
-      // TODO: log::logError(error);
+      logError(error);
     }
 
     return safePath;
@@ -104,7 +121,7 @@ export class FilePath {
    * Gets the full absolute representation of this file path.
    */
   getAbsolutePath() {
-    return this.path;
+    return fs_path2str(this.path);
   }
 
   /**
@@ -122,7 +139,6 @@ export class FilePath {
       return Success();
     }
     catch (err) {
-      // TODO addErrorProperties(m_impl->Path, &error);
       return err;
     }
     return Success();
@@ -145,7 +161,7 @@ export class FilePath {
     try {
       return !this.isEmpty() && fs.existsSync(this.path);
     } catch (err) {
-      logError(this.path, err);
+      logErrorWithPath(this.path, err);
       return false;
     }
   }
@@ -154,13 +170,14 @@ export class FilePath {
    * Checks whether the specified path exists.
    */
   static exists(filePath: string): boolean {
-    if (!filePath) {
+    if (!filePath)
       return false;
-    }
+    
+    let p = fromString(filePath);
     try {
-      return fs.existsSync(filePath);
+      return fs.existsSync(p);
     } catch (err) {
-      logError(filePath, err);
+      logErrorWithPath(p, err);
       return false;
     }
   }
@@ -170,16 +187,14 @@ export class FilePath {
    */
   createDirectory(filePath: string = ''): Err {
     let targetDirectory: string;
-    if (!filePath) {
+    if (!filePath)
       targetDirectory = this.path;
-    } else {
+    else
       targetDirectory = fs_complete(filePath, this.path);
-    }
+
     try {
       fs.mkdirSync(targetDirectory, { recursive: true });
     } catch (err) {
-      // TODO addErrorProperties(this.path, &error);
-      // TODO error.addProperty("target-dir", filePath);
       return err;
     }
     return Success();
@@ -194,10 +209,7 @@ export class FilePath {
       return new FilePath(fs_path2str(fs_complete(filePath, this.path)));
     }
     catch (err) {
-      //Error error(e.code(), ERROR_LOCATION);
-      //addErrorProperties(m_impl -> Path, & error);
-      //error.addProperty("path", in_filePath);
-      // TODO logging log::logError(error);
+      logError(err);
       return this;
     }
     return new FilePath(filePath);

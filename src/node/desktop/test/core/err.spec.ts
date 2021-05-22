@@ -16,7 +16,7 @@
 import { describe } from "mocha";
 import { expect } from "chai";
 
-import { Err, Success } from '../src/err';
+import { Err, Success } from '../../src/core/err';
 
 function beSuccessful(): Err {
   return Success();

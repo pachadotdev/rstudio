@@ -20,7 +20,8 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 
-import { FilePath } from "../src/file-path";
+import { FilePath } from "../../src/core/file-path";
+import { User } from "../../src/core/user";
 
 function randomString() {
   return Math.trunc(Math.random() * 2147483647).toString();
@@ -39,8 +40,14 @@ describe("FilePath", () => {
   });
   describe("Constructor checks", () => {
     it("Should store and return the supplied path", () => {
-      const path = "hello/world";
-      expect(new FilePath(path).getAbsolutePath()).to.equal(path);
+      const path1= "hello/world";
+      const path2 = "~/foo";
+      const path3 = "/once/upon/a/time";
+      const path4 = "~";
+      expect(new FilePath(path1).getAbsolutePath()).to.equal(path1);
+      expect(new FilePath(path2).getAbsolutePath()).to.equal(path2);
+      expect(new FilePath(path3).getAbsolutePath()).to.equal(path3);
+      expect(new FilePath(path4).getAbsolutePath()).to.equal(path4);
     });
     it("Should create empty path when given no arguments", () => {
       const path = new FilePath();
@@ -158,7 +165,22 @@ describe("FilePath", () => {
       expect(fs.existsSync(newPath)).is.true;
       fs.rmdirSync(path.join(os.tmpdir(), firstLevel), { recursive: true });
     });
-    it("ensureDirectory should return success when asked to ensure existing directory exists", () => {
+    it("createDirectory should fail when it cannot create the directory", () => {
+      const fp = new FilePath("/foo/bar/crazy");
+      let result = fp.createDirectory("");
+      expect(!!result).is.true;
+      result = fp.createDirectory("stuff");
+      expect(!!result).is.true;
+    });
+    it("createDirectory should ignore base when given an absolute path", () => {
+      const fp = new FilePath("/foo/bar/crazy");
+      const target = path.join(os.tmpdir(), randomString());
+      let result = fp.createDirectory(target);
+      expect(!!result).is.false;
+      expect(fs.existsSync(target));
+      fs.rmdirSync(target);
+    });
+   it("ensureDirectory should return success when asked to ensure existing directory exists", () => {
       const existingFolder = new FilePath(os.homedir());
       expect(existingFolder.exists()).is.true;
       const result = existingFolder.ensureDirectory();
@@ -186,8 +208,44 @@ describe("FilePath", () => {
       process.chdir(cwd.getAbsolutePath());
       fs.rmdirSync(newFolder);
     });
-  });
-  describe("completePath should do what's expected", () => {
-
+    it("makeCurrentPath should fail to change cwd to non-existent folder", () => {
+      const cwd = process.cwd();
+      const newFolder = path.join(os.tmpdir(), randomString());
+      const f1 = new FilePath(newFolder);
+      expect(fs.existsSync(newFolder)).is.false;
+      const result = f1.makeCurrentPath();
+      expect(!!result).is.true;
+      expect(process.cwd()).equals(cwd);
+   });
+ });
+  describe("Path resolutions", () => {
+    it("resolveAliasedPath should return home if empty path provided", () => {
+      const home = User.getUserHomePath();
+      const result = FilePath.resolveAliasedPath("", home);
+      expect(result.getAbsolutePath()).equals(home.getAbsolutePath());
+    });
+    it("resolveAliasedPath should resolve '~' as home", () => {
+      const home = User.getUserHomePath();
+      const result = FilePath.resolveAliasedPath("~", home);
+      expect(result.getAbsolutePath()).equals(home.getAbsolutePath());
+    });
+    it("resolveAliasedPath should replace '~' in path", () => {
+      const start = "~/foo/bar";
+      const result = FilePath.resolveAliasedPath(start, User.getUserHomePath());
+      const resultStr = result.getAbsolutePath();
+      expect(resultStr.length).is.greaterThanOrEqual(start.length);
+      expect(resultStr.charAt(0)).is.not.equals("~");
+      expect(resultStr.lastIndexOf("/foo/bar")).is.greaterThan(-1);
+    });
+    it("completePath should return absolute path as-is ignoring base", () => {
+      const f1 = User.getUserHomePath();
+      const result = f1.completePath("/from/the/root");
+      expect(result.getAbsolutePath()).equals("/from/the/root");
+    });
+    it("completePath should resolve relative path to cwd when no base", () => {
+      const f1 = new FilePath();
+      const result = f1.completePath("some/path");
+      expect(result.getAbsolutePath()).equals(path.join(process.cwd(), "some/path"));
+    });
   });
 });

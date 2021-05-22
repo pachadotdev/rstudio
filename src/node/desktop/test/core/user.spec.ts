@@ -18,8 +18,7 @@ import { expect } from "chai";
 
 import fs from 'fs';
 
-import { Err, Success } from '../src/err';
-import { User } from '../src/user';
+import { User } from '../../src/core/user';
 
 describe("User", () => {
   describe("Static helpers", () => {
